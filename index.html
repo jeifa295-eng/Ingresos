@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fintech Pro</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginView" class="container">
+  <div class="card">
+    <h2>🔐 Iniciar sesión</h2>
+    <input id="user" placeholder="Usuario">
+    <input id="pass" type="password" placeholder="Contraseña">
+    <button onclick="login()">Entrar</button>
+
+    <p>¿No tienes cuenta?</p>
+    <button onclick="mostrarRegistro()">Registrarse</button>
+
+    <div id="registroBox" style="display:none;">
+      <input id="newUser" placeholder="Nuevo usuario">
+      <input id="newPass" type="password" placeholder="Nueva contraseña">
+      <button onclick="registrar()">Crear cuenta</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appView" class="container" style="display:none;">
+
+  <div class="card header">
+    <h2>💳 Mi Finanzas</h2>
+    <h1 id="balance">$0</h1>
+    <p>Balance actual</p>
+    <button onclick="logout()">Cerrar sesión</button>
+  </div>
+
+  <div class="card">
+    <h3>📅 Filtrar por mes</h3>
+    <input type="month" id="filtroMes" onchange="cargar()">
+  </div>
+
+  <div class="card">
+    <h3>💰 Ingreso</h3>
+    <input id="ingresoMonto" placeholder="Monto">
+    <input id="ingresoCuenta" placeholder="Cuenta">
+    <button onclick="agregarIngreso()">Agregar ingreso</button>
+  </div>
+
+  <div class="card">
+    <h3>💸 Gasto</h3>
+    <input id="gastoMonto" placeholder="Monto">
+    <input id="gastoCategoria" placeholder="Categoría">
+    <button onclick="agregarGasto()">Agregar gasto</button>
+  </div>
+
+  <div class="card">
+    <canvas id="grafica"></canvas>
+  </div>
+
+  <div class="card">
+    <h3>Movimientos</h3>
+    <ul id="lista"></ul>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+<div id="modal" class="modal">
+  <div class="modal-content">
+    <h3>Editar movimiento</h3>
+    <input id="editMonto">
+    <input id="editExtra">
+    <button onclick="guardarEdicion()">Guardar</button>
+    <button onclick="cerrarModal()">Cancelar</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
