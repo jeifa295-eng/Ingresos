@@ -1,82 +1,222 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <title>Fintech Pro</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ContaApp</title>
+
+<style>
+body{margin:0;font-family:-apple-system;background:#f2f2f7}
+.header{padding:20px;text-align:center;font-size:22px;font-weight:bold}
+.card{background:#fff;margin:10px;border-radius:15px;padding:15px}
+button{border:none;background:#007aff;color:#fff;padding:6px 10px;border-radius:8px;margin:2px}
+input{padding:6px;border-radius:8px;border:1px solid #ccc;margin:5px;width:90%}
+.bottom-nav{position:fixed;bottom:0;width:100%;display:flex;background:#fff}
+.bottom-nav button{flex:1;background:none;color:#007aff;padding:15px}
+.hidden{display:none}
+.big{font-size:24px;font-weight:bold}
+</style>
 </head>
+
 <body>
 
-<!-- LOGIN -->
-<div id="loginView" class="container">
+<div class="header">💰 ContaApp</div>
+
+<div id="home">
   <div class="card">
-    <h2>🔐 Iniciar sesión</h2>
-    <input id="user" placeholder="Usuario">
-    <input id="pass" type="password" placeholder="Contraseña">
-    <button onclick="login()">Entrar</button>
-
-    <p>¿No tienes cuenta?</p>
-    <button onclick="mostrarRegistro()">Registrarse</button>
-
-    <div id="registroBox" style="display:none;">
-      <input id="newUser" placeholder="Nuevo usuario">
-      <input id="newPass" type="password" placeholder="Nueva contraseña">
-      <button onclick="registrar()">Crear cuenta</button>
-    </div>
+    <div class="big">Total: <span id="total">0</span></div>
   </div>
 </div>
 
-<!-- APP -->
-<div id="appView" class="container" style="display:none;">
-
-  <div class="card header">
-    <h2>💳 Mi Finanzas</h2>
-    <h1 id="balance">$0</h1>
-    <p>Balance actual</p>
-    <button onclick="logout()">Cerrar sesión</button>
-  </div>
-
+<div id="cats" class="hidden">
   <div class="card">
-    <h3>📅 Filtrar por mes</h3>
-    <input type="month" id="filtroMes" onchange="cargar()">
+    <input id="catName" placeholder="Nombre categoría">
+    <input id="catValor" type="number" placeholder="Valor opcional">
+    <button onclick="addCategory()">Agregar</button>
   </div>
-
-  <div class="card">
-    <h3>💰 Ingreso</h3>
-    <input id="ingresoMonto" placeholder="Monto">
-    <input id="ingresoCuenta" placeholder="Cuenta">
-    <button onclick="agregarIngreso()">Agregar ingreso</button>
-  </div>
-
-  <div class="card">
-    <h3>💸 Gasto</h3>
-    <input id="gastoMonto" placeholder="Monto">
-    <input id="gastoCategoria" placeholder="Categoría">
-    <button onclick="agregarGasto()">Agregar gasto</button>
-  </div>
-
-  <div class="card">
-    <canvas id="grafica"></canvas>
-  </div>
-
-  <div class="card">
-    <h3>Movimientos</h3>
-    <ul id="lista"></ul>
-  </div>
-
+  <div id="categories"></div>
 </div>
 
-<!-- MODAL -->
-<div id="modal" class="modal">
-  <div class="modal-content">
-    <h3>Editar movimiento</h3>
-    <input id="editMonto">
-    <input id="editExtra">
-    <button onclick="guardarEdicion()">Guardar</button>
-    <button onclick="cerrarModal()">Cancelar</button>
+<div id="gastos" class="hidden">
+  <div class="card">
+    <input id="gNombre" placeholder="Gasto">
+    <input id="gValor" type="number" placeholder="Valor">
+    <button onclick="addGasto()">Agregar</button>
   </div>
+  <ul id="gList"></ul>
 </div>
 
-<script src="app.js"></script>
+<div class="bottom-nav">
+  <button onclick="nav('home')">🏠</button>
+  <button onclick="nav('cats')">📂</button>
+  <button onclick="nav('gastos')">💸</button>
+</div>
+
+<script>
+
+// 💰 FORMATO COP
+function formatCOP(num){
+  return '$ ' + num.toLocaleString('es-CO');
+}
+
+let db = JSON.parse(localStorage.getItem('db3')) || {cats:[], gastos:[]};
+
+function save(){
+  localStorage.setItem('db3', JSON.stringify(db));
+}
+
+function nav(x){
+  document.querySelectorAll('#home,#cats,#gastos').forEach(d=>d.classList.add('hidden'));
+  document.getElementById(x).classList.remove('hidden');
+}
+
+// ➕ CATEGORÍA CON VALOR
+function addCategory(){
+  let n = document.getElementById('catName').value;
+  let v = parseFloat(document.getElementById('catValor').value) || 0;
+
+  if(!n) return;
+
+  db.cats.push({
+    name:n,
+    value:v,
+    subs:[],
+    open:false
+  });
+
+  document.getElementById('catName').value='';
+  document.getElementById('catValor').value='';
+  save(); render();
+}
+
+// ➕ SUBCATEGORÍA
+function addSub(i){
+  let n = prompt('Nombre');
+  let v = parseFloat(prompt('Valor'));
+
+  if(!n || isNaN(v)) return;
+
+  db.cats[i].subs.push({name:n, value:v});
+  save(); render();
+}
+
+function toggle(i){
+  db.cats[i].open = !db.cats[i].open;
+  render();
+}
+
+function delCat(i){
+  db.cats.splice(i,1);
+  save(); render();
+}
+
+function delSub(i,j){
+  db.cats[i].subs.splice(j,1);
+  save(); render();
+}
+
+// 💸 GASTOS
+function addGasto(){
+  let n = document.getElementById('gNombre').value;
+  let v = parseFloat(document.getElementById('gValor').value);
+
+  if(!n || isNaN(v)) return;
+
+  db.gastos.push({n,v});
+
+  document.getElementById('gNombre').value='';
+  document.getElementById('gValor').value='';
+  save(); render();
+}
+
+function delGasto(i){
+  db.gastos.splice(i,1);
+  save(); render();
+}
+
+// 🎯 RENDER CORREGIDO
+function render(){
+  let total = 0;
+  let cont = document.getElementById('categories');
+  cont.innerHTML='';
+
+  db.cats.forEach((c,i)=>{
+
+    let sumSubs = 0;
+    c.subs.forEach(s => sumSubs += s.value);
+
+    let totalCat = c.value + sumSubs; // 🔥 AQUÍ ESTÁ LA MAGIA
+    total += totalCat;
+
+    let div = document.createElement('div');
+    div.className='card';
+
+    let h = document.createElement('h3');
+    h.textContent = `${c.name} (${formatCOP(totalCat)})`;
+    h.onclick = ()=>toggle(i);
+
+    let b1 = document.createElement('button');
+    b1.textContent='+';
+    b1.onclick=()=>addSub(i);
+
+    let b2 = document.createElement('button');
+    b2.textContent='🗑';
+    b2.onclick=()=>delCat(i);
+
+    let ul = document.createElement('ul');
+    ul.className = c.open ? '' : 'hidden';
+
+    // Mostrar valor base de categoría
+    if(c.value > 0){
+      let base = document.createElement('li');
+      base.textContent = `Base: ${formatCOP(c.value)}`;
+      ul.appendChild(base);
+    }
+
+    c.subs.forEach((s,j)=>{
+      let li = document.createElement('li');
+      li.textContent = `${s.name}: ${formatCOP(s.value)}`;
+
+      let d = document.createElement('button');
+      d.textContent='❌';
+      d.onclick=()=>delSub(i,j);
+
+      li.appendChild(d);
+      ul.appendChild(li);
+    });
+
+    div.appendChild(h);
+    div.appendChild(b1);
+    div.appendChild(b2);
+    div.appendChild(ul);
+
+    cont.appendChild(div);
+  });
+
+  let gList = document.getElementById('gList');
+  gList.innerHTML='';
+  let tg = 0;
+
+  db.gastos.forEach((g,i)=>{
+    tg += g.v;
+
+    let li = document.createElement('li');
+    li.textContent = `${g.n}: ${formatCOP(g.v)}`;
+
+    let d = document.createElement('button');
+    d.textContent='❌';
+    d.onclick=()=>delGasto(i);
+
+    li.appendChild(d);
+    gList.appendChild(li);
+  });
+
+  document.getElementById('total').textContent = formatCOP(total - tg);
+}
+
+render();
+
+</script>
+
 </body>
 </html>
